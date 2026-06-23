@@ -6,21 +6,20 @@ import { useState, useRef, useCallback } from 'react';
 import ReactFlow, { Controls, Background, MiniMap } from 'reactflow';
 import { useStore } from './store';
 import { shallow } from 'zustand/shallow';
-import { InputNode } from './nodes/inputNode';
-import { LLMNode } from './nodes/llmNode';
-import { OutputNode } from './nodes/outputNode';
-import { TextNode } from './nodes/textNode';
+import { BaseNode } from './nodes/BaseNode';
+import { getNodeDefaultData, nodeDefinitions } from './nodes/nodeRegistry';
 
 import 'reactflow/dist/style.css';
 
 const gridSize = 20;
 const proOptions = { hideAttribution: true };
-const nodeTypes = {
-  customInput: InputNode,
-  llm: LLMNode,
-  customOutput: OutputNode,
-  text: TextNode,
-};
+const nodeTypes = nodeDefinitions.reduce((types, definition) => {
+  types[definition.type] = (props) => (
+    <BaseNode {...props} definition={definition} />
+  );
+
+  return types;
+}, {});
 
 const selector = (state) => ({
   nodes: state.nodes,
@@ -45,14 +44,13 @@ export const PipelineUI = () => {
       onConnect
     } = useStore(selector, shallow);
 
-    const getInitNodeData = (nodeID, type) => {
-      let nodeData = { id: nodeID, nodeType: `${type}` };
-      return nodeData;
-    }
-
     const onDrop = useCallback(
         (event) => {
           event.preventDefault();
+
+          if (!reactFlowInstance) {
+            return;
+          }
     
           const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
           if (event?.dataTransfer?.getData('application/reactflow')) {
@@ -74,13 +72,13 @@ export const PipelineUI = () => {
               id: nodeID,
               type,
               position,
-              data: getInitNodeData(nodeID, type),
+              data: getNodeDefaultData(type, nodeID),
             };
       
             addNode(newNode);
           }
         },
-        [reactFlowInstance]
+        [addNode, getNodeID, reactFlowInstance]
     );
 
     const onDragOver = useCallback((event) => {
@@ -90,7 +88,7 @@ export const PipelineUI = () => {
 
     return (
         <>
-        <div ref={reactFlowWrapper} style={{width: '100wv', height: '70vh'}}>
+        <div ref={reactFlowWrapper} style={{width: '100vw', height: '70vh'}}>
             <ReactFlow
                 nodes={nodes}
                 edges={edges}
