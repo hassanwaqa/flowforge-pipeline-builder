@@ -1,4 +1,5 @@
-import { Handle, Position } from 'reactflow';
+import { useEffect } from 'react';
+import { Handle, Position, useUpdateNodeInternals } from 'reactflow';
 import { useStore } from '../store';
 import { NodeField } from './NodeField';
 
@@ -19,11 +20,13 @@ const nodeStyles = {
     color: '#111827',
     boxShadow: '0 8px 24px rgba(15, 23, 42, 0.08)',
     fontSize: 12,
-    overflow: 'hidden',
+    overflow: 'visible',
   },
   header: {
     padding: '8px 10px',
     borderBottom: '1px solid #e5e7eb',
+    borderTopLeftRadius: 7,
+    borderTopRightRadius: 7,
     fontWeight: 700,
     background: '#f9fafb',
   },
@@ -41,12 +44,31 @@ const nodeStyles = {
 };
 
 export const BaseNode = ({ id, data, definition }) => {
+  const updateNodeInternals = useUpdateNodeInternals();
   const updateNodeField = useStore((state) => state.updateNodeField);
   const fields = definition.fields || [];
-  const handles = definition.handles || [];
+  const staticHandles = definition.handles || [];
+  const dynamicHandles = definition.getDynamicHandles?.({ id, data }) || [];
+  const handles = [...staticHandles, ...dynamicHandles];
+  const dynamicNodeStyles = definition.getNodeStyle?.({ id, data }) || {};
+  const dynamicNodeStyleSignature = JSON.stringify(dynamicNodeStyles);
+  const nodeDataSignature = JSON.stringify(data || {});
+  const handleSignature = handles
+    .map((handle) => `${handle.type}:${handle.position}:${handle.id}:${handle.style?.top || ''}`)
+    .join('|');
+
+  useEffect(() => {
+    updateNodeInternals(id);
+  }, [
+    dynamicNodeStyleSignature,
+    handleSignature,
+    id,
+    nodeDataSignature,
+    updateNodeInternals,
+  ]);
 
   return (
-    <div style={nodeStyles.container}>
+    <div style={{ ...nodeStyles.container, ...dynamicNodeStyles }}>
       {handles.map((handle) => (
         <Handle
           key={`${handle.type}-${handle.id}`}

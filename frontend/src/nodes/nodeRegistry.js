@@ -9,6 +9,43 @@ const operationOptions = [
   { value: 'Summarize', label: 'Summarize' },
 ];
 
+const variablePattern = /\{\{\s*([A-Za-z_$][A-Za-z0-9_$]*)\s*\}\}/g;
+const textNodeDefaultValue = '{{input}}';
+
+const clamp = (value, min, max) => {
+  return Math.min(Math.max(value, min), max);
+};
+
+const getTextNodeValue = (data) => {
+  return data?.text ?? textNodeDefaultValue;
+};
+
+const getTextNodeVariables = (text) => {
+  const variables = [];
+  const seenVariables = new Set();
+
+  for (const match of text.matchAll(variablePattern)) {
+    const variableName = match[1];
+
+    if (!seenVariables.has(variableName)) {
+      seenVariables.add(variableName);
+      variables.push(variableName);
+    }
+  }
+
+  return variables;
+};
+
+const getTextNodeWidth = (text) => {
+  const textNodeMinWidth = 220;
+  const textNodeMaxWidth = 520;
+  const longestLineLength = text
+    .split('\n')
+    .reduce((longest, line) => Math.max(longest, line.length), 0);
+
+  return clamp(180 + longestLineLength * 8, textNodeMinWidth, textNodeMaxWidth);
+};
+
 export const nodeDefinitions = [
   {
     type: 'customInput',
@@ -80,11 +117,27 @@ export const nodeDefinitions = [
       {
         name: 'text',
         label: 'Text',
-        type: 'text',
-        defaultValue: '{{input}}',
+        type: 'textarea',
+        defaultValue: textNodeDefaultValue,
+        autoResize: true,
       },
     ],
     handles: [{ type: 'source', position: 'right', id: 'output' }],
+    getNodeStyle: ({ data }) => ({
+      width: getTextNodeWidth(getTextNodeValue(data)),
+    }),
+    getDynamicHandles: ({ data }) => {
+      const variables = getTextNodeVariables(getTextNodeValue(data));
+
+      return variables.map((variableName, index) => ({
+        type: 'target',
+        position: 'left',
+        id: `variable-${variableName}`,
+        style: {
+          top: `${((index + 1) * 100) / (variables.length + 1)}%`,
+        },
+      }));
+    },
   },
   {
     type: 'transform',

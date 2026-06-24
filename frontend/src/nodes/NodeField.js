@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from 'react';
 import { getDefaultValue } from './nodeRegistry';
 
 const fieldStyles = {
@@ -18,11 +19,27 @@ const fieldStyles = {
     color: '#111827',
     background: '#ffffff',
   },
+  textarea: {
+    minHeight: 64,
+    lineHeight: 1.4,
+    resize: 'none',
+    overflow: 'hidden',
+  },
 };
 
 export const NodeField = ({ field, id, data, onChange }) => {
+  const textareaRef = useRef(null);
   const value = data?.[field.name] ?? getDefaultValue(field, id) ?? '';
   const handleChange = (event) => onChange(id, field.name, event.target.value);
+
+  useLayoutEffect(() => {
+    if (!field.autoResize || field.type !== 'textarea' || !textareaRef.current) {
+      return;
+    }
+
+    textareaRef.current.style.height = 'auto';
+    textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+  }, [field.autoResize, field.type, value]);
 
   if (field.type === 'select') {
     return (
@@ -35,6 +52,21 @@ export const NodeField = ({ field, id, data, onChange }) => {
             </option>
           ))}
         </select>
+      </label>
+    );
+  }
+
+  if (field.type === 'textarea') {
+    return (
+      <label style={fieldStyles.label}>
+        {field.label}
+        <textarea
+          ref={textareaRef}
+          value={value}
+          onChange={handleChange}
+          placeholder={field.placeholder}
+          style={{ ...fieldStyles.control, ...fieldStyles.textarea }}
+        />
       </label>
     );
   }
