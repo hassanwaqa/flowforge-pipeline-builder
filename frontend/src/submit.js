@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ResultModal } from './ResultModal';
 import { useStore } from './store';
 
 const parseEndpoint = 'http://localhost:8000/pipelines/parse';
@@ -7,6 +8,7 @@ export const SubmitButton = () => {
   const nodes = useStore((state) => state.nodes);
   const edges = useStore((state) => state.edges);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [modal, setModal] = useState(null);
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
@@ -26,27 +28,31 @@ export const SubmitButton = () => {
 
       const result = await response.json();
 
-      alert(
-        `Pipeline parsed successfully:\n` +
-        `Nodes: ${result.num_nodes}\n` +
-        `Edges: ${result.num_edges}\n` +
-        `DAG: ${result.is_dag ? 'Yes' : 'No'}`
-      );
+      setModal({ type: 'success', result });
     } catch (error) {
       console.error('Failed to parse pipeline:', error);
-      alert(
-          'Unable to parse the pipeline. Make sure the FastAPI backend is running on http://localhost:8000.'
-      );
+      setModal({
+        type: 'error',
+        message:
+          'Unable to parse the pipeline. Make sure the FastAPI backend is running.',
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-      <button type="button" onClick={handleSubmit} disabled={isSubmitting}>
+    <div className="flex items-center justify-center px-6 py-5">
+      <button
+        type="button"
+        onClick={handleSubmit}
+        disabled={isSubmitting}
+        className="rounded-md bg-indigo-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-indigo-300"
+      >
         {isSubmitting ? 'Submitting...' : 'Submit'}
       </button>
+
+      <ResultModal modal={modal} onClose={() => setModal(null)} />
     </div>
   );
-}
+};

@@ -1,31 +1,8 @@
 import { useLayoutEffect, useRef } from 'react';
 import { getDefaultValue } from './nodeRegistry';
 
-const fieldStyles = {
-  label: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 4,
-    color: '#374151',
-    fontWeight: 600,
-  },
-  control: {
-    width: '100%',
-    boxSizing: 'border-box',
-    border: '1px solid #d1d5db',
-    borderRadius: 6,
-    padding: '6px 8px',
-    fontSize: 12,
-    color: '#111827',
-    background: '#ffffff',
-  },
-  textarea: {
-    minHeight: 64,
-    lineHeight: 1.4,
-    resize: 'none',
-    overflow: 'hidden',
-  },
-};
+const labelClassName = 'flex flex-col gap-1 text-xs font-semibold text-slate-600';
+const controlClassName = 'w-full rounded-md border border-slate-300 bg-white px-2.5 py-2 text-xs text-slate-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100';
 
 export const NodeField = ({ field, id, data, onChange }) => {
   const textareaRef = useRef(null);
@@ -43,9 +20,9 @@ export const NodeField = ({ field, id, data, onChange }) => {
 
   if (field.type === 'select') {
     return (
-      <label style={fieldStyles.label}>
+      <label className={labelClassName}>
         {field.label}
-        <select value={value} onChange={handleChange} style={fieldStyles.control}>
+        <select value={value} onChange={handleChange} className={controlClassName}>
           {field.options.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
@@ -58,28 +35,28 @@ export const NodeField = ({ field, id, data, onChange }) => {
 
   if (field.type === 'textarea') {
     return (
-      <label style={fieldStyles.label}>
+      <label className={labelClassName}>
         {field.label}
         <textarea
           ref={textareaRef}
           value={value}
           onChange={handleChange}
           placeholder={field.placeholder}
-          style={{ ...fieldStyles.control, ...fieldStyles.textarea }}
+          className={`${controlClassName} min-h-16 resize-none overflow-hidden leading-5`}
         />
       </label>
     );
   }
 
   return (
-    <label style={fieldStyles.label}>
+    <label className={labelClassName}>
       {field.label}
       <input
         type={field.inputType || 'text'}
         value={value}
         onChange={handleChange}
         placeholder={field.placeholder}
-        style={fieldStyles.control}
+        className={controlClassName}
       />
     </label>
   );
