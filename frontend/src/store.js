@@ -9,6 +9,7 @@ import {
   } from 'reactflow';
 
 export const useStore = create((set, get) => ({
+    nodeIDs: {},
     nodes: [],
     edges: [],
     getNodeID: (type) => {
@@ -44,7 +45,10 @@ export const useStore = create((set, get) => ({
       set({
         nodes: get().nodes.map((node) => {
           if (node.id === nodeId) {
-            node.data = { ...node.data, [fieldName]: fieldValue };
+            return {
+              ...node,
+              data: { ...node.data, [fieldName]: fieldValue },
+            };
           }
   
           return node;
